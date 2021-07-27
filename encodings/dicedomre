@@ -1,0 +1,21 @@
+% aggiorniamo le celle e troviamo le nuove adiacenze 
+
+pos(0..4).
+symbol(1..7).
+
+
+adiacente(X,Y,Z,X1,Y1):- cell(X,Y,Z), cell(X1,Y1,Z),X1=X+1, Y1=Y,X1<5.
+%SOTTO
+adiacente(X,Y,Z,X1,Y1):- cell(X,Y,Z), cell(X1,Y1,Z),X1=X, Y1=Y+1,Y1<5.
+%SINISTRA
+adiacente(X,Y,Z,X1,Y1):- cell(X,Y,Z), cell(X1,Y1,Z),X1=X-1, Y1=Y, X1>-1.
+%SOPRA
+adiacente(X,Y,Z,X1,Y1):- cell(X,Y,Z), cell(X1,Y1,Z),X1=X, Y1=Y-1,Y1>-1.
+
+isSame(X,Y,X,Y):-cell(X,Y,Z).
+
+%ADIACENZE INDIRETTE
+adiacente(X,Y,Z,X2,Y2):- adiacente(X,Y,Z,X1,Y1), adiacente(X1,Y1,Z,X2,Y2),not isSame(X,Y,X2,Y2).
+
+
+

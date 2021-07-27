@@ -1,0 +1,122 @@
+% -------------------------------------------------------------------------
+
+% avendo una matrice quadrata avremo pos che indica sia i che j della cella.
+pos(0..4).
+
+% -------------------------------------------------------------------------
+
+% sono i dadi che vanno da 1 a 7
+symbol(1..7).
+
+% -------------------------------------------------------------------------
+ 
+% 0 0 0 0 0
+% 0 0 1 1 0
+% 0 0 0 1 0
+% 0 0 0 0 0
+% 0 0 0 0 0
+
+% -------------------------------------------------------------------------
+
+%Guess
+in(X,Y,Z) | out(X,Y,Z):- pos(X), pos(Y),number(Z), not cell(X,Y,Z1), symbol(Z1).	
+
+% -------------------------------------------------------------------------
+
+%%Check
+%Controlliamo che esista esattamente un "in" per answerset
+:- #count{X,Y : in(X,Y,Z)}<>1.
+
+
+%Creiamo una nuova matrice in cui considero "in" come un fatto e adattiamo cell 
+inCell(X,Y,Z):-cell(X,Y,Z).
+inCell(X,Y,Z):-in(X,Y,Z).
+
+% controlliamo che non ci siano cell  nel nuovo in
+:- in(X,Y,_),cell(X,Y,_).
+
+% -------------------------------------------------------------------------
+
+
+%  ci generiamo le adiacenze per lo stesso valore (Z)
+%DESTRA
+adiacente(X,Y,Z,X1,Y1):- inCell(X,Y,Z), inCell(X1,Y1,Z),X1=X+1, Y1=Y,X1<5.
+%SOTTO
+adiacente(X,Y,Z,X1,Y1):- inCell(X,Y,Z), inCell(X1,Y1,Z),X1=X, Y1=Y+1,Y1<5.
+%SINISTRA
+adiacente(X,Y,Z,X1,Y1):- inCell(X,Y,Z), inCell(X1,Y1,Z),X1=X-1, Y1=Y, X1>-1.
+%SOPRA
+adiacente(X,Y,Z,X1,Y1):- inCell(X,Y,Z), inCell(X1,Y1,Z),X1=X, Y1=Y-1,Y1>-1.
+
+
+% -------------------------------------------------------------------------
+
+% per collegare la cella con le adiacenze indirette
+% per esempio:
+
+% 0 0 0 0 0
+% 0 X 1 1 0
+% 0 0 0 1 0
+% 0 0 0 0 0
+% 0 0 0 0 0
+
+
+% la X non è adiacente  solo direttamente alla cella 1,2  ma anche indirettamente 2,3 e 1,3.
+% con not isSame facciamo in modo che non punta a se stesso
+isSame(X,Y,X,Y):-cell(X,Y,Z).
+
+%ADIACENZE INDIRETTE
+adiacente(X,Y,Z,X2,Y2):- adiacente(X,Y,Z,X1,Y1), adiacente(X1,Y1,Z,X2,Y2),not isSame(X,Y,X2,Y2).
+
+% -------------------------------------------------------------------------
+
+%assegniamo un costo agli answerset in base al numero di caselle adiacenti con lo stesso simbolo per l'in
+
+% assegniamo 8 come costo massimo  al weak sotto
+
+% 0 0 X 0 0
+% 0 0 X 0 0
+% X X 0 X X
+% 0 0 X 0 0
+% 0 0 X 0 0
+
+:~ in(X,Y,Z),#count{X1,Y1,Z: adiacente(X,Y,Z,X1,Y1)}=C.[8-C@4]
+
+% -------------------------------------------------------------------------
+
+% adiacenze vuote dirette
+:~in(X,Y,Z),cell(X+1,Y,_), pos(X+1), Z!=7.[1@3]
+:~in(X,Y,Z),cell(X,Y+1,_), pos(Y+1), Z!=7.[1@3]
+:~in(X,Y,Z),cell(X-1,Y,_), pos(X-1), Z!=7.[1@3]
+:~in(X,Y,Z),cell(X,Y-1,_), pos(Y-1), Z!=7.[1@3]
+
+% -------------------------------------------------------------------------
+
+% adiacenze explotion dirette
+:~ Z = 7,in(X,Y,Z),out(X+1,Y,_), pos(X+1).[1@3]
+:~ Z = 7,in(X,Y,Z),out(X,Y+1,_), pos(Y+1).[1@3]
+:~ Z = 7,in(X,Y,Z),out(X-1,Y,_), pos(X-1).[1@3]
+:~ Z = 7,in(X,Y,Z),out(X,Y-1,_), pos(Y-1).[1@3]
+
+:~ Z = 7,in(X,Y,Z),out(X-1,Y-1,_), pos(Y-1),pos(X-1).[1@3]
+:~ Z = 7,in(X,Y,Z),out(X-1,Y+1,_), pos(Y+1),pos(X-1).[1@3]
+:~ Z = 7,in(X,Y,Z),out(X+1,Y-1,_), pos(Y-1),pos(X+1).[1@3]
+:~ Z = 7,in(X,Y,Z),out(X+1,Y+1,_), pos(Y+1),pos(X+1).[1@3]
+
+% -------------------------------------------------------------------------
+
+%Controlla il numero di adiacenti diretti dell in con number(Z+1)
+:~in(X,Y,Z),#count{X1,Y1: cell(X1,Y1,Z+1), DIFX=X-X1,DIFY=Y-Y1, DIFX>-2,DIFY>-2,DIFX<2,DIFY<2,DIF=DIFX+DIFY,DIF<>0,DIF>-2,DIF<2}=C.[4-C@2]
+
+% esempio
+% 0 2 0 0 0
+% 0 X 1 1 0
+% 0 0 0 1 0
+% 0 0 0 0 0
+% 0 0 0 0 0
+%-------
+%X=0,Y=1,X1=1,Y1=0
+%-1+ 1=0 (no)
+%-------
+% deve variare di una sola cella quindi la DIFF deve stare tra (1,-1)
+% 4 => numero massimo adiacenti (sopra,sotto,destra,sinistra)
